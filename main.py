@@ -21,22 +21,6 @@ import tensorflow as tf
 # model.fit(x_train, y_train, epochs=20, validation_data=(x_test, y_test))
 # model.save("model.keras")
 
-model = tf.keras.models.load_model("model.keras")
-
-weights = model.get_weights()
-
-for i in range(0, len(weights), 2):
-    w = weights[i]      
-    b = weights[i + 1]  
-    
-    layer_num = i // 2
-
-    w_int = np.round(w * 127).astype(np.int8)
-    b_int = np.round(b * 127).astype(np.int8)
-
-    
-    np.savetxt(f"layer{layer_num}_weights.txt", w_int, fmt="%d")
-    np.savetxt(f"layer{layer_num}_biases.txt", b_int, fmt="%d")
 
 
 # image_number = 1
@@ -58,3 +42,43 @@ for i in range(0, len(weights), 2):
 #         image_number += 1
        
 
+def write_coe(path, data, radix=10, vals_per_line=32):
+    """
+    Emit a Xilinx .coe file which Vivado BRAM IP can consume.
+      - data: 1D numpy array of ints (-128..127)
+      - radix: 10 for decimal, 16 for hex
+      - vals_per_line: how many comma-sep entries per text line
+    """
+    n = data.size
+    with open(path, "w") as f:
+        f.write(f"memory_initialization_radix={radix};\n")
+        f.write("memory_initialization_vector=\n")
+        for i, v in enumerate(data):
+            # if hex desired: token = f"{(v & 0xFF):02X}"
+            token = str(int(v))
+            sep = "," if i < n-1 else ";"
+            f.write(token + sep)
+            if (i+1) % vals_per_line == 0:
+                f.write("\n")
+        f.write("\n")
+
+def export_model(model_path, out_dir="coe_files", scale=127):
+    os.makedirs(out_dir, exist_ok=True)
+    model = tf.keras.models.load_model(model_path)
+    params = model.get_weights()
+    for idx in range(0, len(params), 2):
+        layer = idx // 2
+        W, B = params[idx], params[idx+1]
+        # quantize to int8
+        Wq = np.round(W * scale).astype(np.int8).flatten()
+        Bq = np.round(B * scale).astype(np.int8).flatten()
+        # write one COE per tensor
+        write_coe(os.path.join(out_dir, f"layer{layer}_W.coe"), Wq, radix=10)
+        write_coe(os.path.join(out_dir, f"layer{layer}_B.coe"), Bq, radix=10)
+        print(f" -> layer{layer}_W.coe ({Wq.size}), layer{layer}_B.coe ({Bq.size})")
+
+
+
+if __name__ == "__main__":
+    export_model("model.keras", out_dir="coe_files")
+    # export_model("model.keras", out_dir="coe_files", scale=127)       

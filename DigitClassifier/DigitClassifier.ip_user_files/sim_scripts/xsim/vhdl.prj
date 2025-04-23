@@ -1,0 +1,11 @@
+vhdl xpm  \
+"D:/Apps/Vivado/2024.2/data/ip/xpm/xpm_VCOMP.vhd" \
+
+vhdl xil_defaultlib  \
+"../../../DigitClassifier.srcs/sources_1/new/Types.vhd" \
+"../../../DigitClassifier.srcs/sources_1/new/Layer.vhd" \
+"../../../DigitClassifier.srcs/sources_1/new/mpg.vhd" \
+"../../../DigitClassifier.srcs/sources_1/new/TOP.vhd" \
+
+# Do not sort compile order
+nosort

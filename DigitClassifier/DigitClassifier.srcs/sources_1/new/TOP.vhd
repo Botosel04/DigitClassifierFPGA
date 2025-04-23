@@ -35,7 +35,7 @@ use work.Types.all;
 entity TOP is
     Port ( clk : in STD_LOGIC;
            btn : in STD_LOGIC;
-           reset: int STD_LOGIC;
+           reset: in STD_LOGIC;
            leds : out STD_LOGIC_VECTOR (15 downto 0);
            cat : out STD_LOGIC_VECTOR (6 downto 0);
            an : out STD_LOGIC_VECTOR (3 downto 0));
@@ -73,14 +73,18 @@ signal button: std_logic;
 signal start : std_logic := '0';
 signal input_neurons: vector_t(0 to 783);
 signal l1_weights: vector_t(0 to 100352);
-signal l1_bias: vector_t(0 to 128);
-signal input_neurons: vector_t(0 to 783);
+signal l1_bias: vector_t(0 to 128) := (-21, 20);
+
+
 signal l1_output_neurons: vector_t(0 to 128);
+signal l2_weights: vector_t(0 to 100352);
+signal l2_bias: vector_t(0 to 128);
+signal l2_output_neurons: vector_t(0 to 128);
 
 begin
 label0: mpg port map(clk, btn, button);
-layer1: Layer port map(clk, reset, 1, l1_weights, l1_bias, input_neurons, l1_output_neurons, start);
-
+layer1: Layer port map(clk, reset, '1', l1_weights, l1_bias, input_neurons, l1_output_neurons, start);
+layer2: Layer generic map(128, 128) port map(clk, reset, start,l2_weights, l2_bias, l1_output_neurons, l2_output_neurons, start);
 
 
 end Behavioral;
